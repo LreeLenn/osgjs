@@ -4,7 +4,11 @@ var Notify = require( 'osg/notify' );
 var GLObject = require( 'osg/GLObject' );
 var StateAttribute = require( 'osg/StateAttribute' );
 var CustomMap = require( 'osg/Map' );
+var ShaderProcessor = require( 'osgShader/ShaderProcessor' );
 var Timer = require( 'osg/Timer' );
+
+// singleton
+var sp = new ShaderProcessor();
 
 /**
  * Program encapsulate an vertex and fragment shader
@@ -44,10 +48,17 @@ var Program = function ( vShader, fShader ) {
 var getAttributeList = function ( vertexShader ) {
     var attributeMap = {};
 
+    var i, l, attr;
     var r = vertexShader.match( /attribute\s+\w+\s+\w+/g );
     if ( r !== null ) {
-        for ( var i = 0, l = r.length; i < l; i++ ) {
-            var attr = r[ i ].match( /attribute\s+\w+\s+(\w+)/ )[ 1 ];
+        for ( i = 0, l = r.length; i < l; i++ ) {
+            attr = r[ i ].match( /attribute\s+\w+\s+(\w+)/ )[ 1 ];
+            attributeMap[ attr ] = true;
+        }
+    } else {
+        r = vertexShader.match( /in\s+\w+\s+\w+\s*;/g );
+        for ( i = 0, l = r.length; i < l; i++ ) {
+            attr = r[ i ].match( /in\s+\w+\s+(\w+)\s*;/ )[ 1 ];
             attributeMap[ attr ] = true;
         }
     }
@@ -116,11 +127,13 @@ Program.prototype = MACROUTILS.objectLibraryClass( MACROUTILS.objectInherit( GLO
     setVertexShader: function ( vs ) {
         this._vertex = vs;
         this._nullProgram = false;
+        vs.setText( sp.processShader( vs.getText() ) );
     },
 
     setFragmentShader: function ( fs ) {
         this._fragment = fs;
         this._nullProgram = false;
+        fs.setText( sp.processShader( fs.getText() ) );
     },
 
     getVertexShader: function () {

@@ -74,7 +74,8 @@ Geometry.prototype = MACROUTILS.objectLibraryClass( MACROUTILS.objectInherit( No
             var prgID = keys[ i ];
             if ( this._vao[ prgID ] ) {
                 var vao = this._vao[ prgID ];
-                this._extVAO.deleteVertexArrayOES( vao );
+                // TODO not the best way to get the context
+                WebGLCaps.instance().getContext().deleteVertexArray( vao );
                 this._vao[ prgID ] = undefined;
             }
         }
@@ -255,7 +256,9 @@ Geometry.prototype = MACROUTILS.objectLibraryClass( MACROUTILS.objectInherit( No
                 var vertexAttributeSetup = this._generateVertexSetup( validAttributeKeyList, validAttributeList, optimizeIndexBufferVAO );
 
                 state.clearVertexAttribCache();
-                var vao = this._extVAO.createVertexArrayOES();
+
+                var gl = state.getGraphicContext();
+                var vao = gl.createVertexArray();
                 state.setVertexArrayObject( vao );
                 this._vao[ prgID ] = vao;
 
@@ -324,8 +327,7 @@ Geometry.prototype = MACROUTILS.objectLibraryClass( MACROUTILS.objectInherit( No
         if ( !this._primitives.length ) return;
 
         if ( this._extVAO === undefined && Geometry.enableVAO ) { // will be null if not supported
-            var extVAO = WebGLCaps.instance( state.getGraphicContext() ).getWebGLExtension( 'OES_vertex_array_object' );
-            this._extVAO = extVAO;
+            this._extVAO = WebGLCaps.instance( state.getGraphicContext() ).getWebGLExtension( 'OES_vertex_array_object' );
         }
 
         cachedDraw = this.generateDrawCommand( state, program, prgID );
